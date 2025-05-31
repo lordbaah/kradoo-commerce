@@ -13,14 +13,21 @@ const Product = () => {
   const [selectedImage, setSelectedImage] = useState<string>('');
 
   const { addToCart, removeFromCart, isInCart } = useContext(CartContext);
-  const inCart = isInCart(product?.id);
+  // const inCart = isInCart(product?.id);
+  const inCart = product?.id !== undefined ? isInCart(product.id) : false;
 
   useDocumentTitle(product?.title || 'Product');
 
   useEffect(() => {
     const loadProduct = async () => {
       try {
+        if (!id) {
+          setError('Product ID is missing');
+          setLoading(false);
+          return;
+        }
         const data = await fetchProductById(id);
+
         setProduct(data || null);
         setSelectedImage(data?.thumbnail || '');
       } catch (error) {

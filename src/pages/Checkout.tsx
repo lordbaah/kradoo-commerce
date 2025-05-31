@@ -3,7 +3,7 @@ import { CartContext } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 
 function Checkout() {
-  const { cart, updateQuantity, removeFromCart } = useContext(CartContext);
+  const { cart } = useContext(CartContext);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const navigate = useNavigate();
