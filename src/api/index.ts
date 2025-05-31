@@ -12,10 +12,6 @@ export const fetchProducts = async (
     const response = await axios.get(
       `${url}/products?limit=${limit}&skip=${skip}&sortBy=${sortBy}&order=${order}`
     );
-    console.log(
-      'GET URL:',
-      `${url}/products?limit=${limit}&skip=${skip}&sortBy=${sortBy}&order=${order}`
-    );
     return response.data;
   } catch (error) {
     console.log('error', error);
