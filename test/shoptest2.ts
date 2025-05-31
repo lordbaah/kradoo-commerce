@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import ProductCard from '../components/ProductCard';
-import { fetchProducts, fetchProductsByCategory } from '../api/index';
-import useDocumentTitle from '../hooks/useDocumentTitle';
-import type { ProductProps } from '../types/index';
+import ProductCard from '../src/components/ProductCard';
+import { fetchProducts, fetchProductsByCategory } from '../src/api/index';
+import useDocumentTitle from '../src/hooks/useDocumentTitle';
+import type { ProductProps } from '../src/types/index';
 import { HiViewGrid, HiMenu } from 'react-icons/hi';
 
 const Shop = () => {
