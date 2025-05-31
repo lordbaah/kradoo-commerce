@@ -1,0 +1,463 @@
+// Enhanced Product Component
+import { useState, useEffect, useContext } from 'react';
+import { CartContext } from '../context/CartContext';
+import { fetchProductById } from '../api';
+import type { ProductProps, Review } from '../types/index';
+import { useParams } from 'react-router-dom';
+import useDocumentTitle from '../hooks/useDocumentTitle';
+
+const Product = () => {
+  const { id } = useParams<{ id: string }>();
+  const [product, setProduct] = useState<ProductProps | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
+  const [selectedImage, setSelectedImage] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<
+    'description' | 'specifications' | 'reviews' | 'shipping'
+  >('description');
+
+  const { addToCart, removeFromCart, isInCart } = useContext(CartContext);
+
+  const inCart = isInCart(product?.id);
+
+  useDocumentTitle(product?.title || 'Product');
+
+  useEffect(() => {
+    const loadProduct = async () => {
+      try {
+        const data = await fetchProductById(id);
+        console.log(data);
+        setProduct(data || null);
+        setSelectedImage(data?.thumbnail || '');
+      } catch (error) {
+        const err = error as Error;
+        setError(err.message);
+        console.error('Failed to fetch products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProduct();
+  }, [id]);
+
+  const renderStars = (rating: number) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(
+        <span key={i} className="text-yellow-400">
+          ★
+        </span>
+      );
+    }
+
+    if (hasHalfStar) {
+      stars.push(
+        <span key="half" className="text-yellow-400">
+          ☆
+        </span>
+      );
+    }
+
+    const emptyStars = 5 - Math.ceil(rating);
+    for (let i = 0; i < emptyStars; i++) {
+      stars.push(
+        <span key={`empty-${i}`} className="text-gray-300">
+          ☆
+        </span>
+      );
+    }
+
+    return stars;
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="p-4 text-center">
+        <h2 className="text-2xl font-bold text-gray-600">Product not found</h2>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto p-4">
+      {/* Product Header */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Image Gallery */}
+        <div className="space-y-4">
+          <div className="aspect-square overflow-hidden rounded-lg border">
+            <img
+              src={selectedImage || product.thumbnail}
+              alt={product.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+
+          {product.images && product.images.length > 1 && (
+            <div className="grid grid-cols-4 gap-2">
+              {product.images.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImage(image)}
+                  className={`aspect-square overflow-hidden rounded border-2 ${
+                    selectedImage === image
+                      ? 'border-blue-500'
+                      : 'border-gray-200'
+                  }`}
+                >
+                  <img
+                    src={image}
+                    alt={`${product.title} ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Product Info */}
+        <div className="space-y-6">
+          {product.brand && (
+            <p className="text-sm text-gray-600 uppercase tracking-wide">
+              {product.brand}
+            </p>
+          )}
+
+          <h1 className="text-3xl font-bold text-gray-900">{product.title}</h1>
+
+          {product.rating && (
+            <div className="flex items-center space-x-2">
+              <div className="flex">{renderStars(product.rating)}</div>
+              <span className="text-sm text-gray-600">
+                ({product.rating}/5)
+              </span>
+              {product.reviews && (
+                <span className="text-sm text-gray-600">
+                  • {product.reviews.length} review
+                  {product.reviews.length !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center space-x-4">
+            <span className="text-3xl font-bold text-gray-900">
+              ${product.price}
+            </span>
+            {product.discountPercentage && product.discountPercentage > 0 && (
+              <>
+                <span className="text-lg text-gray-500 line-through">
+                  $
+                  {(
+                    product.price /
+                    (1 - product.discountPercentage / 100)
+                  ).toFixed(2)}
+                </span>
+                <span className="bg-red-100 text-red-800 text-sm font-medium px-2 py-1 rounded">
+                  {product.discountPercentage}% OFF
+                </span>
+              </>
+            )}
+          </div>
+
+          {product.stock !== undefined && (
+            <div className="text-sm">
+              {product.stock > 0 ? (
+                <span className="text-green-600">
+                  ✓ In Stock ({product.stock} available)
+                </span>
+              ) : (
+                <span className="text-red-600">✗ Out of Stock</span>
+              )}
+            </div>
+          )}
+
+          {product.tags && product.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {product.tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="bg-gray-100 text-gray-800 text-xs font-medium px-2 py-1 rounded-full"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <button
+            className={`w-full py-3 px-6 rounded-lg font-medium text-white transition-colors ${
+              product.stock === 0
+                ? 'bg-gray-400 cursor-not-allowed'
+                : inCart
+                ? 'bg-red-600 hover:bg-red-700'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+            onClick={() =>
+              inCart ? removeFromCart(product.id) : addToCart(product)
+            }
+            disabled={product.stock === 0}
+          >
+            {product.stock === 0
+              ? 'Out of Stock'
+              : inCart
+              ? 'Remove from Cart'
+              : 'Add to Cart'}
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs Section */}
+      <div className="border-t pt-8">
+        {/* Tab Navigation */}
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            {[
+              { key: 'description', label: 'Description' },
+              { key: 'specifications', label: 'Specifications' },
+              {
+                key: 'reviews',
+                label: `Reviews (${product.reviews?.length || 0})`,
+              },
+              { key: 'shipping', label: 'Shipping & Returns' },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as any)}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === tab.key
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        <div className="py-6">
+          {activeTab === 'description' && (
+            <div className="prose max-w-none">
+              <p className="text-gray-700 leading-relaxed">
+                {product.description}
+              </p>
+              {product.availabilityStatus && (
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-medium text-blue-900">Availability</h4>
+                  <p className="text-blue-700">{product.availabilityStatus}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'specifications' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                {product.category && (
+                  <div className="flex justify-between py-2 border-b border-gray-100">
+                    <span className="font-medium text-gray-600">Category</span>
+                    <span className="text-gray-900 capitalize">
+                      {product.category}
+                    </span>
+                  </div>
+                )}
+                {product.brand && (
+                  <div className="flex justify-between py-2 border-b border-gray-100">
+                    <span className="font-medium text-gray-600">Brand</span>
+                    <span className="text-gray-900">{product.brand}</span>
+                  </div>
+                )}
+                {product.weight && (
+                  <div className="flex justify-between py-2 border-b border-gray-100">
+                    <span className="font-medium text-gray-600">Weight</span>
+                    <span className="text-gray-900">{product.weight} kg</span>
+                  </div>
+                )}
+                {product.minimumOrderQuantity && (
+                  <div className="flex justify-between py-2 border-b border-gray-100">
+                    <span className="font-medium text-gray-600">
+                      Minimum Order
+                    </span>
+                    <span className="text-gray-900">
+                      {product.minimumOrderQuantity} units
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {product.dimensions && (
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900">Dimensions</h4>
+                  <div className="flex justify-between py-2 border-b border-gray-100">
+                    <span className="font-medium text-gray-600">Width</span>
+                    <span className="text-gray-900">
+                      {product.dimensions.width} cm
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-100">
+                    <span className="font-medium text-gray-600">Height</span>
+                    <span className="text-gray-900">
+                      {product.dimensions.height} cm
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-100">
+                    <span className="font-medium text-gray-600">Depth</span>
+                    <span className="text-gray-900">
+                      {product.dimensions.depth} cm
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'reviews' && (
+            <div className="space-y-6">
+              {product.reviews && product.reviews.length > 0 ? (
+                <>
+                  {/* Reviews Summary */}
+                  <div className="bg-gray-50 rounded-lg p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-gray-900">
+                          {product.rating}
+                        </div>
+                        <div className="flex justify-center">
+                          {renderStars(product.rating || 0)}
+                        </div>
+                        <div className="text-sm text-gray-600 mt-1">
+                          Based on {product.reviews.length} review
+                          {product.reviews.length !== 1 ? 's' : ''}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Individual Reviews */}
+                  <div className="space-y-6">
+                    {product.reviews.map((review, index) => (
+                      <div
+                        key={index}
+                        className="border-b border-gray-200 pb-6 last:border-b-0"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h4 className="font-medium text-gray-900">
+                              {review.reviewerName}
+                            </h4>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <div className="flex">
+                                {renderStars(review.rating)}
+                              </div>
+                              <span className="text-sm text-gray-600">
+                                {formatDate(review.date)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-gray-700 leading-relaxed">
+                          {review.comment}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-gray-400 text-6xl mb-4">💬</div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No reviews yet
+                  </h3>
+                  <p className="text-gray-600">
+                    Be the first to review this product!
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'shipping' && (
+            <div className="space-y-6">
+              {product.shippingInformation && (
+                <div className="bg-blue-50 rounded-lg p-6">
+                  <h4 className="font-medium text-blue-900 mb-2">
+                    Shipping Information
+                  </h4>
+                  <p className="text-blue-700">{product.shippingInformation}</p>
+                </div>
+              )}
+
+              {product.returnPolicy && (
+                <div className="bg-green-50 rounded-lg p-6">
+                  <h4 className="font-medium text-green-900 mb-2">
+                    Return Policy
+                  </h4>
+                  <p className="text-green-700">{product.returnPolicy}</p>
+                </div>
+              )}
+
+              {product.warrantyInformation && (
+                <div className="bg-purple-50 rounded-lg p-6">
+                  <h4 className="font-medium text-purple-900 mb-2">
+                    Warranty Information
+                  </h4>
+                  <p className="text-purple-700">
+                    {product.warrantyInformation}
+                  </p>
+                </div>
+              )}
+
+              {!product.shippingInformation &&
+                !product.returnPolicy &&
+                !product.warrantyInformation && (
+                  <div className="text-center py-12">
+                    <div className="text-gray-400 text-6xl mb-4">📦</div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Shipping information not available
+                    </h3>
+                    <p className="text-gray-600">
+                      Contact us for shipping and return details.
+                    </p>
+                  </div>
+                )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Product;

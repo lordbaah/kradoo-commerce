@@ -18,7 +18,7 @@ export const CartContext = createContext<CartContextProps>(
   {} as CartContextProps
 );
 
-// ✅ Lazy state initialization to prevent setState during render
+// Lazy state initialization to prevent setState during render
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
@@ -31,7 +31,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     }
   });
 
-  // ✅ Persist cart to localStorage on every update
+  // Persist cart to localStorage on every update
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);

@@ -1,9 +1,12 @@
 import { useContext } from 'react';
 import { CartContext } from '../context/CartContext';
 import { Link } from 'react-router-dom';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 function Cart() {
   const { cart, updateQuantity, removeFromCart } = useContext(CartContext);
+
+  useDocumentTitle('Cart');
 
   const totalPrice = cart.reduce(
     (acc, item) => acc + item.price * item.quantity,

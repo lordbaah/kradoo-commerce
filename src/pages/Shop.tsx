@@ -120,7 +120,7 @@ const Shop = () => {
           Product Collection
         </h2>
 
-        <p className="mt-4 max-w-md text-gray-500 text-center m-auto">
+        <p className="mt-4 max-w-md text-gray-500 text-center mx-auto">
           Discover the latest in tech, fashion, and home essentials. At Kradoo
           Shop, we bring you hand-picked products with top-notch quality and
           unbeatable prices. Start browsing and find something you'll love

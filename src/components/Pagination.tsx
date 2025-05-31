@@ -11,7 +11,7 @@ const Pagination = ({
   if (totalPages <= 1) return null;
 
   const pages = [];
-  const maxVisiblePages = 5;
+  const maxVisiblePages = 3;
 
   let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
   let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
@@ -67,7 +67,7 @@ const Pagination = ({
   const endItem = Math.min(currentSkip + itemsPerPage, totalItems);
 
   return (
-    <div className="flex flex-col sm:flex-row justify-center items-center mt-8 gap-4">
+    <div className="flex flex-col justify-center items-center mt-8 gap-4">
       <div className="flex items-center flex-wrap justify-center">{pages}</div>
       <div className="text-sm text-gray-600">
         Showing {startItem}-{endItem} of {totalItems} products
